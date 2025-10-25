@@ -4,9 +4,12 @@ import com.vacation.vacationPlanner.entity.ProposalApproval;
 import com.vacation.vacationPlanner.entity.ProposalApprovalIdCK;
 import com.vacation.vacationPlanner.service.ProposalApprovalService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -59,4 +62,31 @@ public class ProposalApprovalController {
         proposalApprovalService.deleteApproval(id);
         return "Proposal approval deleted successfully!";
     }
+
+
+    @PutMapping("/{userId}/{proposalId}")
+    public ResponseEntity<?> updateApprovalStatus(
+            @PathVariable Integer userId,
+            @PathVariable Integer proposalId,
+            @RequestBody Map<String, String> requestBody) {
+
+        String newStatus = requestBody.get("status");
+        if (newStatus == null) {
+            return ResponseEntity.badRequest().body("Missing status field");
+        }
+
+        ProposalApprovalIdCK id = new ProposalApprovalIdCK(userId, proposalId);
+        ProposalApproval approval = proposalApprovalService.getApprovalById(id);
+
+        if (approval == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Approval record not found for user " + userId + " and proposal " + proposalId);
+        }
+
+        approval.setStatus(newStatus);
+        proposalApprovalService.saveApproval(approval);
+
+        return ResponseEntity.ok("Status updated to " + newStatus);
+    }
+
 }
